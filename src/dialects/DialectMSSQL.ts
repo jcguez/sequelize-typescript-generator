@@ -211,27 +211,37 @@ export class DialectMSSQL extends Dialect {
         const columnsMetadata: IColumnMetadata[] = [];
 
         const query = `
-            SELECT 
-                c.*,
-                CASE WHEN COLUMNPROPERTY(object_id(c.TABLE_SCHEMA +'.' + c.TABLE_NAME), c.COLUMN_NAME, 'IsIdentity') = 1 THEN 'YES' ELSE 'NO' END AS IS_IDENTITY, 
-                tc.CONSTRAINT_NAME, 
-                tc.CONSTRAINT_TYPE,
-                ep.value                AS [COLUMN_COMMENT]               
-            FROM information_schema.columns c
-            LEFT OUTER JOIN information_schema.key_column_usage ku
-                 ON c.TABLE_CATALOG = ku.TABLE_CATALOG AND c.TABLE_NAME = ku.TABLE_NAME AND
-                    c.COLUMN_NAME = ku.COLUMN_NAME
-            LEFT OUTER JOIN information_schema.table_constraints tc
-                 ON c.TABLE_CATALOG = tc.TABLE_CATALOG AND c.TABLE_NAME = tc.TABLE_NAME AND
-                    ku.CONSTRAINT_CATALOG = tc.CONSTRAINT_CATALOG AND ku.CONSTRAINT_NAME = tc.CONSTRAINT_NAME                    
-            INNER JOIN sysobjects t
-                ON c.TABLE_NAME = t.name AND t.type = 'u'
-            INNER JOIN syscolumns sc
-                ON sc.id = t.id AND sc.name = c.COLUMN_NAME
-            LEFT OUTER JOIN sys.extended_properties ep
-                 ON ep.major_id = sc.id AND ep.minor_id = sc.colid AND ep.name = 'MS_Description'                                        
-            WHERE c.TABLE_CATALOG = N'${config.connection.database}' AND c.TABLE_NAME = N'${table}'
-            ORDER BY c.ORDINAL_POSITION;
+        SELECT 
+            c.*,
+            CASE WHEN COLUMNPROPERTY(object_id(c.TABLE_SCHEMA + '.' + c.TABLE_NAME), c.COLUMN_NAME, 'IsIdentity') = 1 THEN 'YES' ELSE 'NO' END AS IS_IDENTITY, 
+            tc.CONSTRAINT_NAME, 
+            tc.CONSTRAINT_TYPE,
+            ep.value AS [COLUMN_COMMENT]               
+        FROM information_schema.columns c
+        LEFT OUTER JOIN information_schema.key_column_usage ku
+            ON c.TABLE_CATALOG = ku.TABLE_CATALOG 
+            AND c.TABLE_NAME = ku.TABLE_NAME 
+            AND c.COLUMN_NAME = ku.COLUMN_NAME
+        LEFT OUTER JOIN information_schema.table_constraints tc
+            ON c.TABLE_CATALOG = tc.CONSTRAINT_CATALOG 
+            AND c.TABLE_NAME = tc.TABLE_NAME 
+            AND ku.CONSTRAINT_CATALOG = tc.CONSTRAINT_CATALOG 
+            AND ku.CONSTRAINT_NAME = tc.CONSTRAINT_NAME                    
+        INNER JOIN sysobjects t
+            ON c.TABLE_NAME = t.name 
+            AND t.type = 'u'
+        INNER JOIN syscolumns sc
+            ON sc.id = t.id 
+            AND sc.name = c.COLUMN_NAME
+        LEFT OUTER JOIN sys.extended_properties ep
+            ON ep.major_id = sc.id 
+            AND ep.minor_id = sc.colid 
+            AND ep.name = 'MS_Description'                                        
+        WHERE 
+            c.TABLE_CATALOG = N'${config.connection.database}' 
+            AND c.TABLE_SCHEMA = '${config.metadata?.schema}'
+            AND c.TABLE_NAME = '${table}'
+        ORDER BY c.ORDINAL_POSITION;
         `;
 
         const columns = await connection.query(
