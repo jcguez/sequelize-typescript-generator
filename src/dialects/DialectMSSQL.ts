@@ -84,6 +84,7 @@ const jsDataTypesMap: { [key: string]: string } = {
     varbinary: 'Uint8Array',
     uniqueidentifier: 'string',
     xml: 'string',
+    geography: 'object',
 };
 
 const sequelizeDataTypesMap: { [key: string]: AbstractDataTypeConstructor } = {
